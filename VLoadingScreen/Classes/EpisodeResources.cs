@@ -37,22 +37,47 @@ namespace VLoadingScreen.Classes
             switch (type)
             {
                 case TextureType.Background:
-                    searchPattern = "*.bg.dds";
+                    searchPattern = ".bg.dds";
                     break;
                 case TextureType.Character:
-                    searchPattern = "*.char.dds";
+                    searchPattern = ".char.dds";
                     break;
                 case TextureType.Logo:
-                    searchPattern = "*.logo.dds";
+                    searchPattern = ".logo.dds";
                     break;
             }
 
-            string[] ddsFiles = Directory.GetFiles(pathToResources, searchPattern, SearchOption.AllDirectories);
-
-            for (int i = 0; i < ddsFiles.Length; i++)
+            for (int i = 0; i < Main.Instance.CachedFilesWithinResourcesFolder.Length; i++)
             {
-                string path = ddsFiles[i].ToLowerInvariant();
+                string path = Main.Instance.CachedFilesWithinResourcesFolder[i];
+
+                // Filter out files which are not within the resources folder of the current episode
+                if (!path.StartsWith(pathToResources))
+                {
+                    //Logging.LogDebug("Path '{0}' does not start with '{1}'!", path, pathToResources);
+                    continue;
+                }
+
+                // Filter out files which dont match the file extension
+                if (!path.EndsWith(searchPattern))
+                {
+                    //Logging.LogDebug("Path '{0}' does not end with '{1}'!", path, searchPattern);
+                    continue;
+                }
+
                 string fileName = Path.GetFileName(path);
+
+                if (!File.Exists(path))
+                {
+                    Logging.LogWarning("File '{0}' is in cache but no longer actually exists on disk!", fileName);
+                    continue;
+                }
+
+                if (WasTextureCreated(fileName))
+                {
+                    Logging.LogDebug("Texture {0} was already created. Skipping.", fileName);
+                    continue;
+                }
 
                 // Try creating texture
                 ImGuiIV.CreateTextureFromFile(path, out ImTexture texture, out eResult result);
@@ -69,6 +94,75 @@ namespace VLoadingScreen.Classes
                 Textures.Add(new TextureResource(texture, type, fileName));
             }
         }
+        public void LoadSingleTextureOfType(TextureType type)
+        {
+            string pathToResources = Path.Combine(Main.Instance.ScriptResourceFolder, ResourceFolder);
+
+            string searchPattern = string.Empty;
+
+            switch (type)
+            {
+                case TextureType.Background:
+                    searchPattern = ".bg.dds";
+                    break;
+                case TextureType.Character:
+                    searchPattern = ".char.dds";
+                    break;
+                case TextureType.Logo:
+                    searchPattern = ".logo.dds";
+                    break;
+            }
+
+            for (int i = 0; i < Main.Instance.CachedFilesWithinResourcesFolder.Length; i++)
+            {
+                string path = Main.Instance.CachedFilesWithinResourcesFolder[i];
+
+                // Filter out files which are not within the resources folder of the current episode
+                if (!path.StartsWith(pathToResources))
+                {
+                    //Logging.LogDebug("Path '{0}' does not start with '{1}'!", path, pathToResources);
+                    continue;
+                }
+
+                // Filter out files which dont match the file extension
+                if (!path.EndsWith(searchPattern))
+                {
+                    //Logging.LogDebug("Path '{0}' does not end with '{1}'!", path, searchPattern);
+                    continue;
+                }
+
+                string fileName = Path.GetFileName(path);
+
+                if (!File.Exists(path))
+                {
+                    Logging.LogWarning("File '{0}' is in cache but no longer actually exists on disk!", fileName);
+                    continue;
+                }
+
+                if (WasTextureCreated(fileName))
+                {
+                    Logging.LogDebug("Texture {0} was already created. Skipping.", fileName);
+                    continue;
+                }
+
+                // Try creating texture
+                ImGuiIV.CreateTextureFromFile(path, out ImTexture texture, out eResult result);
+
+                if (result != eResult.OK)
+                {
+                    Logging.LogError("Failed to load single texture from file '{0}'! Details: {1}", fileName, result);
+                    continue;
+                }
+
+                Logging.LogDebug("Successfully loaded single texture from file '{0}'!", path);
+
+                // Add texture
+                Textures.Add(new TextureResource(texture, type, fileName));
+
+                break;
+            }
+        }
+
         public void ReleaseAllTextures()
         {
             for (int i = 0; i < Textures.Count; i++)
@@ -93,12 +187,23 @@ namespace VLoadingScreen.Classes
             currentlyCreatingTextures = true;
 
             string pathToResources = Path.Combine(Main.Instance.ScriptResourceFolder, ResourceFolder);
-            string[] ddsFiles = Directory.GetFiles(pathToResources, "*.dds", SearchOption.AllDirectories);
 
-            for (int i = 0; i < ddsFiles.Length; i++)
+            for (int i = 0; i < Main.Instance.CachedFilesWithinResourcesFolder.Length; i++)
             {
-                string path = ddsFiles[i].ToLowerInvariant();
+                string path = Main.Instance.CachedFilesWithinResourcesFolder[i];
                 string fileName = Path.GetFileName(path);
+
+                // Filter out files which are not within the resources folder of the current episode
+                if (!path.StartsWith(pathToResources))
+                {
+                    continue;
+                }
+
+                if (!File.Exists(path))
+                {
+                    Logging.LogWarning("File '{0}' is in cache but no longer actually exists on disk!", fileName);
+                    continue;
+                }
 
                 if (WasTextureCreated(fileName))
                 {

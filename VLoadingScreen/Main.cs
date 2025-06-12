@@ -22,6 +22,8 @@ namespace VLoadingScreen
         private Queue<Action> renderThreadQueue;
         private List<EpisodeResources> availableEpisodeLoadingScreens;
 
+        public string[] CachedFilesWithinResourcesFolder;
+
         // Resources
         private EpisodeResources currentEpisodeResources;
         private List<LoadingScreen> currentLoadingTextures;
@@ -31,13 +33,10 @@ namespace VLoadingScreen
         private float characterOffset;
         private float logoTransparency;
 
+        private DateTime addNextLoadingScreenAt;
+
         // States
         private bool isLoading;
-
-        public bool AddNextImage;
-
-        // Other
-        private Guid imageSwitcherTimerID;
         #endregion
 
         #region Methods
@@ -98,6 +97,15 @@ namespace VLoadingScreen
 
             // Add next loading screen
             currentLoadingTextures.Add(info);
+        }
+        private void AddNextRandomLoadingScreen()
+        {
+            LoadingTexture backgroundTexture = currentEpisodeResources.GetRandomLoadingTextureByType(TextureType.Background).CreateLoadingTexture();
+            LoadingTexture characterTexture = currentEpisodeResources.GetRandomLoadingTextureByType(TextureType.Character).CreateLoadingTexture();
+
+            AddNextLoadingScreen(new LoadingScreen(backgroundTexture, characterTexture));
+
+            addNextLoadingScreenAt = DateTime.UtcNow.AddSeconds(10d);
         }
 
         private void DrawAndProcessLoadingScreen(ImGuiIV_DrawingContext ctx)
@@ -221,17 +229,20 @@ namespace VLoadingScreen
 
         private void Main_Uninitialize(object sender, EventArgs e)
         {
-            if (imageSwitcherTimerID != Guid.Empty)
-            {
-                AbortTaskOrTimer(imageSwitcherTimerID);
-                imageSwitcherTimerID = Guid.Empty;
-            }
+
         }
         private void Main_Initialized(object sender, EventArgs e)
         {
             ModSettings.Load(Settings);
             LoadAvailableLoadingScreens();
-            PreloadEpisodeLogoTextures();
+
+            if (availableEpisodeLoadingScreens.Count != 0)
+            {
+                PreloadEpisodeLogoTextures();
+
+                // Cache files so we dont need to ask the OS to give us all the files within a directory all the time
+                CachedFilesWithinResourcesFolder = Directory.GetFiles(ScriptResourceFolder, "*.*", SearchOption.AllDirectories);
+            }
         }
 
         private void Main_GameLoadPriority(object sender, EventArgs e)
@@ -249,13 +260,7 @@ namespace VLoadingScreen
                     Thread.Sleep(1);
                 }
 
-                LoadingTexture backgroundTexture = currentEpisodeResources.GetRandomLoadingTextureByType(TextureType.Background).CreateLoadingTexture();
-                LoadingTexture characterTexture = currentEpisodeResources.GetRandomLoadingTextureByType(TextureType.Character).CreateLoadingTexture();
-
-                // Randomize values for background
-                backgroundTexture.RandomizeValues();
-
-                AddNextLoadingScreen(new LoadingScreen(StartingPosition.Right, backgroundTexture, characterTexture));
+                AddNextRandomLoadingScreen();
             }
         }
         private void Main_MountDevice(object sender, EventArgs e)
@@ -278,21 +283,12 @@ namespace VLoadingScreen
 
                 // Get logo
                 if (currentLogoTexture == null)
-                {
                     currentLogoTexture = currentEpisodeResources.GetLoadingTexturesByType(TextureType.Logo).FirstOrDefault().CreateLoadingTexture();
-                }
 
-                if (AddNextImage)
+                DateTime dtNow = DateTime.UtcNow;
+                if (dtNow > addNextLoadingScreenAt && addNextLoadingScreenAt != DateTime.MinValue)
                 {
-                    AddNextImage = false;
-
-                    LoadingTexture backgroundTexture = currentEpisodeResources.GetRandomLoadingTextureByType(TextureType.Background).CreateLoadingTexture();
-                    LoadingTexture characterTexture = currentEpisodeResources.GetRandomLoadingTextureByType(TextureType.Character).CreateLoadingTexture();
-
-                    // Randomize values for background
-                    backgroundTexture.RandomizeValues();
-
-                    AddNextLoadingScreen(new LoadingScreen(StartingPosition.Left, backgroundTexture, characterTexture));
+                    AddNextRandomLoadingScreen();
                 }
 
                 DrawAndProcessLoadingScreen(ctx);

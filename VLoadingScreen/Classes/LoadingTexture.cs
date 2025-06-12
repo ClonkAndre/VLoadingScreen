@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Numerics;
 
 using IVSDKDotNet;
-using static IVSDKDotNet.Native.Natives;
 
 namespace VLoadingScreen.Classes
 {
@@ -45,16 +44,6 @@ namespace VLoadingScreen.Classes
         #endregion
 
         #region Methods
-        public void RandomizeValues()
-        {
-            TopLeftCornerOffset = new Vector2(GENERATE_RANDOM_FLOAT_IN_RANGE(-30f, -10f), GENERATE_RANDOM_FLOAT_IN_RANGE(-10f, 10f));
-
-            BottomLeftCornerOffset = new Vector2(GENERATE_RANDOM_FLOAT_IN_RANGE(10f, 30f), 0f);
-
-            TopRightCornerOffset = new Vector2(GENERATE_RANDOM_FLOAT_IN_RANGE(10f, 30f), GENERATE_RANDOM_FLOAT_IN_RANGE(-20f, -5f));
-
-            BottomRightCornerOffset = new Vector2(GENERATE_RANDOM_FLOAT_IN_RANGE(-5f, 5f), GENERATE_RANDOM_FLOAT_IN_RANGE(-5f, 5f));
-        }
         public void Draw(ImGuiIV_DrawingContext ctx, Color color)
         {
             IntPtr texturePtr = theTextureResource.GetTexture();
