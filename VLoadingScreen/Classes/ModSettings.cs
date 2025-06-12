@@ -12,29 +12,47 @@ namespace VLoadingScreen.Classes
     {
 
         #region Variables
-        public static int LoadingScreen_ImageSwitchingInterval;
-        public static float LoadingScreen_BackgroundLerpSpeed;
-        public static float LoadingScreen_CharacterLerpSpeed;
-        public static float LoadingScreen_BackgroundZoomOutSpeed;
-        public static float LoadingScreen_CharacterMoveSpeed;
 
-        public static bool Logo_Show;
-        public static int Logo_FadingSpeed;
+        // General
+        public static double SwitchingInterval;
+        public static float LerpAmount;
+
+        // Background
+        public static float BackgroundDefaultScale;
+        public static float PerspectiveChangeSpeedMultiplier;
+        public static float ZoomOutAmount;
+
+        // Character
+        public static float CharacterDefaultScale;
+        public static float CharacterMoveAmount;
+
+        // Logo
+        public static bool ShowLogo;
+        public static float LogoFadingSpeed;
+
         #endregion
 
         public static void Load(SettingsFile settings)
         {
-            // Load settings
-            LoadingScreen_ImageSwitchingInterval = settings.GetInteger("LoadingScreen", "ImageSwitchingInterval", 5500);
+            // General
+            SwitchingInterval = settings.GetDouble("General", "SwitchingInterval", 7d);
+            LerpAmount =        settings.GetFloat("General", "LerpAmount", 0.06f);
 
-            LoadingScreen_BackgroundLerpSpeed = settings.GetFloat("LoadingScreen", "BackgroundLerpSpeed", 0.04f);
-            LoadingScreen_CharacterLerpSpeed = settings.GetFloat("LoadingScreen", "CharacterLerpSpeed", 0.04f);
+            if (SwitchingInterval < 3d)
+                SwitchingInterval = 7.0d;
 
-            LoadingScreen_BackgroundZoomOutSpeed = settings.GetFloat("LoadingScreen", "BackgroundZoomOutSpeed", 50.0f);
-            LoadingScreen_CharacterMoveSpeed = settings.GetFloat("LoadingScreen", "CharacterMoveSpeed", 20.0f);
+            // Background
+            BackgroundDefaultScale =            settings.GetFloat("Background", "DefaultScale", 0.78f);
+            PerspectiveChangeSpeedMultiplier =  settings.GetFloat("Background", "PerspectiveChangeSpeedMultiplier", 2.5f);
+            ZoomOutAmount =                     settings.GetFloat("Background", "ZoomOutAmount", 0.00002f);
 
-            Logo_Show = settings.GetBoolean("Logo", "Show", true);
-            Logo_FadingSpeed = settings.GetInteger("Logo", "FadingSpeed", 1);
+            // Character
+            CharacterDefaultScale = settings.GetFloat("Character", "DefaultScale", 0.85f);
+            CharacterMoveAmount =   settings.GetFloat("Character", "MoveAmount", 0.1f);
+
+            // Logo
+            ShowLogo =          settings.GetBoolean("Logo", "Show", true);
+            LogoFadingSpeed =   settings.GetFloat("Logo", "FadingSpeed", 0.1f);
         }
 
     }

@@ -4,9 +4,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Threading;
+
+using Newtonsoft.Json;
 
 using VLoadingScreen.Classes;
+using VLoadingScreen.Classes.Json;
 
 using IVSDKDotNet;
 using IVSDKDotNet.Enums;
@@ -29,8 +31,6 @@ namespace VLoadingScreen
         private List<LoadingScreen> currentLoadingTextures;
         private LoadingTexture currentLogoTexture;
 
-        private float backgroundZoom = 1.0f;
-        private float characterOffset;
         private float logoTransparency;
 
         private DateTime addNextLoadingScreenAt;
@@ -52,7 +52,15 @@ namespace VLoadingScreen
                     return;
                 }
 
-                availableEpisodeLoadingScreens = Helper.ConvertJsonStringToObject<List<EpisodeResources>>(File.ReadAllText(path));
+                // Read file content
+                string content = File.ReadAllText(path);
+
+                // Remove all comments
+                content = string.Join(Environment.NewLine,
+                    content.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None)
+                    .Where(line => !line.TrimStart().StartsWith("//")));
+
+                availableEpisodeLoadingScreens = JsonConvert.DeserializeObject<List<EpisodeResources>>(content);
                 Logging.Log("Loaded {0} available episode loading screens.", availableEpisodeLoadingScreens.Count);
             }
             catch (Exception ex)
@@ -61,11 +69,15 @@ namespace VLoadingScreen
             }
         }
 
-        private void PreloadEpisodeLogoTextures()
+        private void InitAllEpisodeResources()
+        {
+            availableEpisodeLoadingScreens.ForEach(x => x.Init());
+        }
+        private void CreateAllEpisodeLogoTextures()
         {
             renderThreadQueue.Enqueue(() =>
             {
-                availableEpisodeLoadingScreens.ForEach(x => x.PreloadTexturesOfType(TextureType.Logo));
+                availableEpisodeLoadingScreens.ForEach(x => x.CreateTexturesOfType(TextureType.Logo));
             });
         }
         private void ReleaseAllTextures()
@@ -105,7 +117,7 @@ namespace VLoadingScreen
 
             AddNextLoadingScreen(new LoadingScreen(backgroundTexture, characterTexture));
 
-            addNextLoadingScreenAt = DateTime.UtcNow.AddSeconds(10d);
+            addNextLoadingScreenAt = DateTime.UtcNow.AddSeconds(ModSettings.SwitchingInterval);
         }
 
         private void DrawAndProcessLoadingScreen(ImGuiIV_DrawingContext ctx)
@@ -120,9 +132,11 @@ namespace VLoadingScreen
                 if (info == null)
                     continue;
 
-                // ====== Process background ======
+                // =================================
+                // ======= Process background ======
+                // =================================
                 LoadingTexture background = info.BackgroundTexture;
-                background.Scale = ((io.DisplaySize / background.GetSize()) * backgroundZoom) * 0.78f /*Final Zoom*/;
+                background.Scale = ((io.DisplaySize / background.GetSize()) * info.BackgroundZoom) * ModSettings.BackgroundDefaultScale /*Final Zoom*/;
 
                 // Figure out where the background needs to be
                 Vector2 backgroundTargetPos = Vector2.Zero;
@@ -140,17 +154,20 @@ namespace VLoadingScreen
                         break;
                 }
 
-                background.Position = Vector2.Lerp(background.Position, backgroundTargetPos, 0.06f);
+                background.Position = Vector2.Lerp(background.Position, backgroundTargetPos, ModSettings.LerpAmount);
 
-                background.TopRightCornerOffset -= new Vector2(0.06f, -0.06f); // Move the top-right corner of the image down and to the left
-                background.BottomRightCornerOffset -= new Vector2(0.06f, 0.06f); // Move the bottom-right corner of the image up and to the left
+                background.TopRightCornerOffset     -= new Vector2(0.06f, -0.06f) * ModSettings.PerspectiveChangeSpeedMultiplier /*Speed Multiplier*/; // Move the top-right corner of the image down and to the left
+                background.BottomRightCornerOffset  -= new Vector2(0.06f, 0.06f) * ModSettings.PerspectiveChangeSpeedMultiplier /*Speed Multiplier*/; // Move the bottom-right corner of the image up and to the left
 
+                // Zoom bg out
+                info.BackgroundZoom -= ModSettings.ZoomOutAmount;
 
-
-                // ====== Process character ======
+                // =================================
+                // ======= Process character =======
+                // =================================
                 LoadingTexture character = info.CharacterTexture;
                 Vector2 charSize = character.GetSize();
-                character.Scale = new Vector2((io.DisplaySize.X / charSize.X) * 0.5f, io.DisplaySize.Y / charSize.Y) * 0.85f /*Final Zoom*/;
+                character.Scale = (new Vector2((io.DisplaySize.X / charSize.X) * 0.5f, io.DisplaySize.Y / charSize.Y) * currentEpisodeResources.CharacterScale) * ModSettings.CharacterDefaultScale /*Final Zoom*/;
 
                 // Figure out where the character needs to be
                 Vector2 characterTargetPos = Vector2.Zero;
@@ -158,7 +175,7 @@ namespace VLoadingScreen
                 switch (info.TargetPos)
                 {
                     case TargetPosition.Center:
-                        characterTargetPos = new Vector2((io.DisplaySize.X * 0.5f) + characterOffset, io.DisplaySize.Y);
+                        characterTargetPos = new Vector2((io.DisplaySize.X * 0.5f) + info.CharacterOffsetX, io.DisplaySize.Y);
                         break;
                     case TargetPosition.Left:
                         characterTargetPos = new Vector2(0f - charSize.X, io.DisplaySize.Y);
@@ -168,19 +185,16 @@ namespace VLoadingScreen
                         break;
                 }
 
-                character.Position = Vector2.Lerp(character.Position, characterTargetPos, 0.06f);
-                
+                character.Position = Vector2.Lerp(character.Position, characterTargetPos, ModSettings.LerpAmount);
 
+                // Move char
+                info.CharacterOffsetX = info.CharacterMoveDirection == StartingPosition.Left ? info.CharacterOffsetX - ModSettings.CharacterMoveAmount : info.CharacterOffsetX + ModSettings.CharacterMoveAmount;
 
 
 
                 // Draw stuff
                 background.Draw(ctx, Color.White);
                 character.Draw(ctx, Color.White);
-
-                // Move char and zoom out bg
-                backgroundZoom -= 0.00002f;
-                characterOffset -= 0.1f;
 
                 // Remove this loading screen if background has reached its target position
                 if (info.TargetPos != TargetPosition.Center && Vector2.Distance(background.Position, backgroundTargetPos) < 1f)
@@ -191,9 +205,9 @@ namespace VLoadingScreen
             }
 
             // Draw logo
-            if (currentLogoTexture != null)
+            if (ModSettings.ShowLogo && currentLogoTexture != null)
             {
-                logoTransparency = logoTransparency.Lerp(255f, 0.1f);
+                logoTransparency = logoTransparency.Lerp(255f, ModSettings.LogoFadingSpeed);
 
                 currentLogoTexture.Position = new Vector2(10f, (io.DisplaySize.Y - currentLogoTexture.GetSize().Y) - 10f);
                 currentLogoTexture.Draw(ctx, Color.FromArgb((int)logoTransparency, Color.White));
@@ -238,10 +252,11 @@ namespace VLoadingScreen
 
             if (availableEpisodeLoadingScreens.Count != 0)
             {
-                PreloadEpisodeLogoTextures();
-
                 // Cache files so we dont need to ask the OS to give us all the files within a directory all the time
                 CachedFilesWithinResourcesFolder = Directory.GetFiles(ScriptResourceFolder, "*.*", SearchOption.AllDirectories);
+
+                InitAllEpisodeResources();
+                CreateAllEpisodeLogoTextures();
             }
         }
 
@@ -254,19 +269,21 @@ namespace VLoadingScreen
             {
                 isLoading = true;
 
-                while (!currentEpisodeResources.CreateAllTextures())
-                {
-                    IVGrcWindow.ProcessWindowMessage();
-                    Thread.Sleep(1);
-                }
+                // Load textures and read their config file
+                currentEpisodeResources.CreateAllTextures();
+                currentEpisodeResources.ReadAllTextureConfigFiles();
 
+                // Show random loading screen
                 AddNextRandomLoadingScreen();
             }
         }
         private void Main_MountDevice(object sender, EventArgs e)
         {
-            isLoading = false;
-            ReleaseAllTextures();
+            if (isLoading)
+            {
+                isLoading = false;
+                ReleaseAllTextures();
+            }
         }
 
         private void Main_OnImGuiRendering(IntPtr devicePtr, ImGuiIV_DrawingContext ctx)

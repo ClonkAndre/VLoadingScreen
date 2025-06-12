@@ -11,10 +11,14 @@ namespace VLoadingScreen.Classes
         #region Variables
         public StartingPosition InitialStartingPos;
         public TargetPosition TargetPos;
-        public bool ReachedTargetPosition;
 
         public LoadingTexture BackgroundTexture;
         public LoadingTexture CharacterTexture;
+
+        public float BackgroundZoom = 1.0f;
+        public float CharacterOffsetX;
+
+        public StartingPosition CharacterMoveDirection;
         #endregion
 
         #region Constructor
@@ -26,6 +30,9 @@ namespace VLoadingScreen.Classes
             BackgroundTexture = backgroundTexture;
             CharacterTexture = characterTexture;
 
+            BackgroundZoom = 1.0f;
+            CharacterMoveDirection = (StartingPosition)Natives.GENERATE_RANDOM_INT_IN_RANGE(0, 2);
+
             Init();
         }
         public LoadingScreen(LoadingTexture backgroundTexture, LoadingTexture characterTexture)
@@ -35,6 +42,9 @@ namespace VLoadingScreen.Classes
 
             BackgroundTexture = backgroundTexture;
             CharacterTexture = characterTexture;
+
+            BackgroundZoom = 1.0f;
+            CharacterMoveDirection = (StartingPosition)Natives.GENERATE_RANDOM_INT_IN_RANGE(0, 2);
 
             Init();
         }

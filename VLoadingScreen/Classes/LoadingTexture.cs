@@ -28,10 +28,22 @@ namespace VLoadingScreen.Classes
         {
             theTextureResource = textureResource;
 
+            // Set stuff based on the type
             switch (theTextureResource.Type)
             {
                 case TextureType.Background:
                     OriginPosition = TextureOriginPosition.Center;
+
+                    // Set stuff from config
+                    if (textureResource.BackgroundTextureConfig != null)
+                    {
+                        TopLeftCornerOffset = textureResource.BackgroundTextureConfig.TopLeftCornerOffset;
+                        BottomLeftCornerOffset = textureResource.BackgroundTextureConfig.BottomLeftCornerOffset;
+                        TopRightCornerOffset = textureResource.BackgroundTextureConfig.TopRightCornerOffset;
+                        BottomRightCornerOffset = textureResource.BackgroundTextureConfig.BottomRightCornerOffset;
+                        Logging.LogDebug("Setting corner offsets for image {0}. {1} - {2} - {3} - {4}", textureResource.FileName, TopLeftCornerOffset, BottomLeftCornerOffset, TopRightCornerOffset, BottomRightCornerOffset);
+                    }
+
                     break;
                 case TextureType.Character:
                     OriginPosition = TextureOriginPosition.BottomCenter;
@@ -59,12 +71,9 @@ namespace VLoadingScreen.Classes
             Vector2 p2 = Vector2.Zero;
             Vector2 p3 = Vector2.Zero;
 
-            //Vector2 actualPosition = Vector2.Zero;
-
             switch (OriginPosition)
             {
                 case TextureOriginPosition.TopLeft:
-                    //actualPosition = Position;
 
                     // Define the quad from top-left corner
                     p0 = Vector2.Zero + TopLeftCornerOffset; // TL
@@ -74,8 +83,6 @@ namespace VLoadingScreen.Classes
 
                     break;
                 case TextureOriginPosition.Center:
-                    //actualPosition = Position - ((new Vector2(size.Width, size.Height) * 0.5f) * Scale);
-                    //actualPosition = Position - (new Vector2(size.Width, size.Height) * 0.5f);
 
                     Vector2 halfSize = new Vector2(size.X, size.Y) * 0.5f;
 
@@ -133,7 +140,7 @@ namespace VLoadingScreen.Classes
             // Hide aliasing artifacts (or texture aliasing) along the edges
             if (theTextureResource.Type == TextureType.Background)
             {
-                ctx.AddLine(p0, p1, Color.Black, 5f);
+                ctx.AddLine(p0 - new Vector2(0f, 2f), p1, Color.Black, 5f);
                 ctx.AddLine(p1, p3, Color.Black, 5f);
                 ctx.AddLine(p3, p2, Color.Black, 5f);
                 ctx.AddLine(p2, p0, Color.Black, 5f);

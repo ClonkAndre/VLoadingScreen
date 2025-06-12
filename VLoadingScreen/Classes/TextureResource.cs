@@ -2,6 +2,8 @@
 using System.Drawing;
 using System.Numerics;
 
+using VLoadingScreen.Classes.Json;
+
 using IVSDKDotNet;
 
 namespace VLoadingScreen.Classes
@@ -13,6 +15,7 @@ namespace VLoadingScreen.Classes
         private ImTexture theTexture;
         public TextureType Type;
         public string FileName;
+        public BackgroundTextureConfig BackgroundTextureConfig;
         #endregion
 
         #region Constructor
