@@ -14,4 +14,4 @@ A highly immersive loading screen mod for Grand Theft Auto IV, designed to repli
 GTAForums Workshop: https://gtaforums.com/topic/988909-itsclonkandres-workshop/
 
 ## How to Contribute
-Do you have an idea to improve this mod, or did you happen to run into a bug? Please share your idea or the bug you found in the [issues](https://github.com/ClonkAndre/SimpleSpeedometer/issues) page, or even better: feel free to fork and contribute to this project with a [Pull Request](https://github.com/ClonkAndre/SimpleSpeedometer/pulls).
+Do you have an idea to improve this mod, or did you happen to run into a bug? Please share your idea or the bug you found in the [issues](https://github.com/ClonkAndre/VLoadingScreen/issues) page, or even better: feel free to fork and contribute to this project with a [Pull Request](https://github.com/ClonkAndre/VLoadingScreen/pulls).
