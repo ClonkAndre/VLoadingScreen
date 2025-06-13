@@ -12,6 +12,7 @@ using VLoadingScreen.Classes.Json;
 
 using IVSDKDotNet;
 using IVSDKDotNet.Enums;
+using IVSDKDotNet.Native;
 
 namespace VLoadingScreen
 {
@@ -294,6 +295,10 @@ namespace VLoadingScreen
 
         private void Main_GameLoadPriority(object sender, EventArgs e)
         {
+            // I don't think the random seeds are set at this point.
+            // Adding this native seems to make the GENERATE_RANDOM_X... functions more random (...maybe)
+            Natives.SET_RANDOM_SEED(Environment.TickCount);
+
             // Create images for episode
             currentEpisodeResources = GetEpisodeResourcesForEpisode((int)IVGame.CurrentEpisodeMenu);
 

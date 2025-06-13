@@ -17,6 +17,8 @@ namespace VLoadingScreen.Classes.Json
 
         #region Variables
         public int EpisodeID;
+        private int lastGeneratedBackgroundNumber = -1;
+        private int lastGeneratedCharacterNumber = -1;
 
         public string ResourceFolder;
         private string pathToResourceFolder;
@@ -245,7 +247,47 @@ namespace VLoadingScreen.Classes.Json
             if (textures.Length == 0)
                 return null;
 
-            return textures[Natives.GENERATE_RANDOM_INT_IN_RANGE(0, textures.Length)];
+            int randomNumber = Natives.GENERATE_RANDOM_INT_IN_RANGE(0, textures.Length);
+
+            switch (type)
+            {
+                case TextureType.Background:
+
+                    if (lastGeneratedBackgroundNumber == -1)
+                    {
+                        lastGeneratedBackgroundNumber = randomNumber;
+                    }
+                    else
+                    {
+                        if (randomNumber == lastGeneratedBackgroundNumber)
+                        {
+                            // Generate random number again in hope that we dont generate the same one again (if we do then... well... idgaf)
+                            randomNumber = Natives.GENERATE_RANDOM_INT_IN_RANGE(0, textures.Length);
+                            lastGeneratedBackgroundNumber = randomNumber;
+                        }
+                    }
+
+                    break;
+                case TextureType.Character:
+
+                    if (lastGeneratedCharacterNumber == -1)
+                    {
+                        lastGeneratedCharacterNumber = randomNumber;
+                    }
+                    else
+                    {
+                        if (randomNumber == lastGeneratedCharacterNumber)
+                        {
+                            // Generate random number again in hope that we dont generate the same one again (if we do then... well... idgaf)
+                            randomNumber = Natives.GENERATE_RANDOM_INT_IN_RANGE(0, textures.Length);
+                            lastGeneratedCharacterNumber = randomNumber;
+                        }
+                    }
+
+                    break;
+            }
+
+            return textures[randomNumber];
         }
         public TextureResource GetLoadingTextureByFileName(string fileName)
         {
