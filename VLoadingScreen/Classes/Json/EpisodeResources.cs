@@ -203,14 +203,28 @@ namespace VLoadingScreen.Classes.Json
             }
         }
 
-        public void ReleaseAllTextures()
+        public void ReleaseAllTextures(TextureType ofType = TextureType.All)
         {
             for (int i = 0; i < Textures.Count; i++)
             {
                 TextureResource res = Textures[i];
-                Logging.LogDebug("Releasing texture {0}. Result: {1}", res.FileName, res.Release());
+
+                if (ofType == TextureType.All)
+                {
+                    Logging.LogDebug("Releasing texture {0}. Result: {1}", res.FileName, res.Release());
+                    Textures.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    if (ofType == res.Type)
+                    {
+                        Logging.LogDebug("Releasing texture {0} because its of type {1}. Result: {2}", res.FileName, ofType, res.Release());
+                        Textures.RemoveAt(i);
+                        i--;
+                    }
+                }
             }
-            Textures.Clear();
         }
         #endregion
 

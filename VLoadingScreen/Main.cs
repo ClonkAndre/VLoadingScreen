@@ -37,9 +37,38 @@ namespace VLoadingScreen
 
         // States
         private bool isLoading;
+        private bool canShowLoadingScreen;
         #endregion
 
         #region Methods
+        private void Cleanup()
+        {
+            isLoading = false;
+            canShowLoadingScreen = false;
+
+            ReleaseAllTextures(TextureType.All);
+
+            renderThreadQueue.Clear();
+            availableEpisodeLoadingScreens.Clear();
+            currentLoadingTextures.Clear();
+        }
+        private void Reset()
+        {
+            isLoading = false;
+            canShowLoadingScreen = false;
+            addNextLoadingScreenAt = DateTime.MinValue;
+
+            currentEpisodeResources = null;
+            currentLogoTexture = null;
+
+            currentLoadingTextures.Clear();
+
+            logoTransparency = 0.0f;
+
+            ReleaseAllTextures(TextureType.Background);
+            ReleaseAllTextures(TextureType.Character);
+        }
+
         private void LoadAvailableLoadingScreens()
         {
             try
@@ -80,11 +109,11 @@ namespace VLoadingScreen
                 availableEpisodeLoadingScreens.ForEach(x => x.CreateTexturesOfType(TextureType.Logo));
             });
         }
-        private void ReleaseAllTextures()
+        private void ReleaseAllTextures(TextureType ofType)
         {
             renderThreadQueue.Enqueue(() =>
             {
-                availableEpisodeLoadingScreens.ForEach(x => x.ReleaseAllTextures());
+                availableEpisodeLoadingScreens.ForEach(x => x.ReleaseAllTextures(ofType));
             });
         }
 
@@ -203,10 +232,13 @@ namespace VLoadingScreen
                     i--;
                 }
             }
-
+        }
+        private void DrawAndProcessLoadingScreenLogo(ImGuiIV_DrawingContext ctx)
+        {
             // Draw logo
             if (ModSettings.ShowLogo && currentLogoTexture != null)
             {
+                ImGuiIV_IO io = ImGuiIV.GetIO();
                 logoTransparency = logoTransparency.Lerp(255f, ModSettings.LogoFadingSpeed);
 
                 currentLogoTexture.Position = new Vector2(10f, (io.DisplaySize.Y - currentLogoTexture.GetSize().Y) - 10f);
@@ -243,7 +275,7 @@ namespace VLoadingScreen
 
         private void Main_Uninitialize(object sender, EventArgs e)
         {
-
+            Cleanup();
         }
         private void Main_Initialized(object sender, EventArgs e)
         {
@@ -273,6 +305,8 @@ namespace VLoadingScreen
                 currentEpisodeResources.CreateAllTextures();
                 currentEpisodeResources.ReadAllTextureConfigFiles();
 
+                canShowLoadingScreen = true;
+
                 // Show random loading screen
                 AddNextRandomLoadingScreen();
             }
@@ -281,8 +315,7 @@ namespace VLoadingScreen
         {
             if (isLoading)
             {
-                isLoading = false;
-                ReleaseAllTextures();
+                Reset();
             }
         }
 
@@ -293,15 +326,20 @@ namespace VLoadingScreen
                 renderThreadQueue.Dequeue().Invoke();
             }
 
-            if (isLoading)
+            // Skip logic when we are not loading
+            if (!isLoading)
+                return;
+
+            ImGuiIV_IO io = ImGuiIV.GetIO();
+            ctx.AddRectFilled(Vector2.Zero, io.DisplaySize, Color.Black, 0.0f, eImDrawFlags.None);
+
+            // Get logo
+            if (currentLogoTexture == null)
+                currentLogoTexture = currentEpisodeResources.GetLoadingTexturesByType(TextureType.Logo).FirstOrDefault().CreateLoadingTexture();
+
+            // Draw loading screen if we are allowed to
+            if (canShowLoadingScreen)
             {
-                ImGuiIV_IO io = ImGuiIV.GetIO();
-                ctx.AddRectFilled(Vector2.Zero, io.DisplaySize, Color.Black, 0.0f, eImDrawFlags.None);
-
-                // Get logo
-                if (currentLogoTexture == null)
-                    currentLogoTexture = currentEpisodeResources.GetLoadingTexturesByType(TextureType.Logo).FirstOrDefault().CreateLoadingTexture();
-
                 DateTime dtNow = DateTime.UtcNow;
                 if (dtNow > addNextLoadingScreenAt && addNextLoadingScreenAt != DateTime.MinValue)
                 {
@@ -310,6 +348,9 @@ namespace VLoadingScreen
 
                 DrawAndProcessLoadingScreen(ctx);
             }
+
+            // Draw loading screen logo
+            DrawAndProcessLoadingScreenLogo(ctx);
         }
 
     }
