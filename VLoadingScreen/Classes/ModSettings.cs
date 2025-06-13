@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using IVSDKDotNet;
+﻿using IVSDKDotNet;
+using IVSDKDotNet.Attributes;
 
 namespace VLoadingScreen.Classes
 {
+    [ShowStaticFieldsInInspector]
     internal static class ModSettings
     {
 
@@ -43,7 +39,7 @@ namespace VLoadingScreen.Classes
 
             // Background
             BackgroundDefaultScale =            settings.GetFloat("Background", "DefaultScale", 0.78f);
-            PerspectiveChangeSpeedMultiplier =  settings.GetFloat("Background", "PerspectiveChangeSpeedMultiplier", 2.5f);
+            PerspectiveChangeSpeedMultiplier =  settings.GetFloat("Background", "PerspectiveChangeSpeedMultiplier", 2.6f);
             ZoomOutAmount =                     settings.GetFloat("Background", "ZoomOutAmount", 0.00002f);
 
             // Character
