@@ -1,5 +1,6 @@
 # VLoadingScreen
-A highly immersive loading screen mod for Grand Theft Auto IV, designed to replicate the dynamic loading experience of Grand Theft Auto V. This mod replaces the static loading screens with animated transitions, perspective shifts, and optional ambient music - all closely mimicking the official GTA V style.
+A highly immersive loading screen mod for Grand Theft Auto IV, designed to replicate the dynamic loading experience of Grand Theft Auto V.  
+This mod replaces the static loading screens with animated transitions, perspective shifts  - all closely mimicking the official GTA V style.
 
 ## 🔧 Key Features
 - Authentic GTA V-style transitions: Includes smooth pan and zoom effects that closely replicate GTA V's dynamic loading screen behavior - far beyond what texture-only mods can achieve.
